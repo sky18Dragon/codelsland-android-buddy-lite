@@ -24,6 +24,10 @@ fun BuddyNavGraph(
     onExitDemo: () -> Unit,
     onCycleDemo: () -> Unit,
     onRescan: () -> Unit,
+    onApprove: () -> Unit,
+    onDeny: () -> Unit,
+    onSkip: () -> Unit,
+    onFocus: () -> Unit,
     isHyperOS: Boolean
 ) {
     val navController = rememberNavController()
@@ -37,7 +41,11 @@ fun BuddyNavGraph(
                 onExitDemo = onExitDemo,
                 onCycleDemo = onCycleDemo,
                 onRescan = onRescan,
-                onRequestPermissions = onRequestPermissions
+                onRequestPermissions = onRequestPermissions,
+                onApprove = onApprove,
+                onDeny = onDeny,
+                onSkip = onSkip,
+                onFocus = onFocus
             )
         }
         composable(Routes.DIAGNOSTICS) {

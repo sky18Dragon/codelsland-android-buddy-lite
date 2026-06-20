@@ -64,9 +64,11 @@ class MainActivity : ComponentActivity() {
                         onEnterDemo = { repo.enterDemoMode() },
                         onExitDemo = { repo.exitDemoMode() },
                         onCycleDemo = { repo.cycleDemoState() },
-                        onRescan = {
-                            startSyncService()
-                        },
+                        onRescan = { startSyncService() },
+                        onApprove = { sendBuddyAction(BuddyPeripheralService.ACTION_APPROVE) },
+                        onDeny = { sendBuddyAction(BuddyPeripheralService.ACTION_DENY) },
+                        onSkip = { sendBuddyAction(BuddyPeripheralService.ACTION_SKIP) },
+                        onFocus = { sendBuddyAction(BuddyPeripheralService.ACTION_FOCUS) },
                         isHyperOS = permissionCoordinator.isHyperOS()
                     )
                 }
@@ -120,6 +122,17 @@ class MainActivity : ComponentActivity() {
 
     private fun startSyncService() {
         val intent = Intent(this, BuddyPeripheralService::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intent)
+        } else {
+            startService(intent)
+        }
+    }
+
+    private fun sendBuddyAction(action: String) {
+        val intent = Intent(this, BuddyPeripheralService::class.java).apply {
+            this.action = action
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startForegroundService(intent)
         } else {

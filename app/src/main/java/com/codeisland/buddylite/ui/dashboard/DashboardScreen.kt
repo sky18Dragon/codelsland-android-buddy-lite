@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.sp
 import com.codeisland.buddylite.data.model.BuddyDashboardState
 import com.codeisland.buddylite.data.model.CompanionStatus
 import com.codeisland.buddylite.data.model.ConnectionState
+import com.codeisland.buddylite.data.model.PeripheralState
 import com.codeisland.buddylite.data.model.SessionCard
 import com.codeisland.buddylite.ui.components.BuddyButton
 import com.codeisland.buddylite.ui.components.MetadataChip
@@ -56,7 +57,11 @@ fun DashboardScreen(
     onExitDemo: () -> Unit,
     onCycleDemo: () -> Unit,
     onRescan: () -> Unit,
-    onRequestPermissions: () -> Unit
+    onRequestPermissions: () -> Unit,
+    onApprove: () -> Unit = {},
+    onDeny: () -> Unit = {},
+    onSkip: () -> Unit = {},
+    onFocus: () -> Unit = {}
 ) {
     LazyColumn(
         modifier = Modifier
@@ -72,21 +77,23 @@ fun DashboardScreen(
 
         // Connection state-specific content
         when {
-            state.connectionState == ConnectionState.PERMISSION_BLOCKED -> {
+            state.peripheralState == PeripheralState.PERMISSION_REQUIRED -> {
                 item { PermissionBlockedCard(onRequestPermissions = onRequestPermissions) }
             }
-            state.connectionState == ConnectionState.DISCONNECTED && !state.isDemoMode -> {
-                item { DiscoveryCard(state = state, onEnterDemo = onEnterDemo, onRescan = onRescan) }
+            state.peripheralState == PeripheralState.BLUETOOTH_OFF ||
+                (state.peripheralState != PeripheralState.CONNECTED && !state.isDemoMode) -> {
+                item { AdvertisingCard(state = state, onEnterDemo = onEnterDemo, onRescan = onRescan) }
             }
-            state.connectionState == ConnectionState.SCANNING -> {
-                item { ScanningCard(onEnterDemo = onEnterDemo) }
-            }
-            state.connectionState.isTransitional -> {
-                item { ConnectingCard(state = state) }
+            state.peripheralState == PeripheralState.STARTING -> {
+                item { StartingCard() }
             }
             else -> {
-                // Connected or Stale or Demo - show full dashboard
+                // Connected or Demo - show full dashboard
                 item { MessageCard(state = state) }
+                // Command buttons (approve/deny/skip/focus)
+                if (state.canApprove || state.canSkip) {
+                    item { CommandButtons(state = state, onApprove = onApprove, onDeny = onDeny, onSkip = onSkip, onFocus = onFocus) }
+                }
                 if (state.pendingAction != null && state.questionText != null) {
                     item { QuestionCard(state = state) }
                 }
@@ -158,12 +165,16 @@ private fun StatusHeaderCard(state: BuddyDashboardState) {
 private fun subtitle(state: BuddyDashboardState): String {
     if (state.isDemoMode) return "演示模式"
     if (state.isStale) return "数据延迟 · ${state.connectedDeviceName ?: ""}"
-    return state.connectedDeviceName
-        ?: when (state.connectionState) {
-            ConnectionState.DISCONNECTED -> "离线"
-            ConnectionState.SCANNING -> "搜索中"
-            else -> ""
-        }
+    if (state.connectedDeviceName != null) return state.connectedDeviceName
+    return when (state.peripheralState) {
+        PeripheralState.STARTING -> "正在启动 Buddy 广播..."
+        PeripheralState.ADVERTISING -> "等待 Mac 连接"
+        PeripheralState.CONNECTED -> if (state.macSubscribed) "已连接 · 已订阅" else "已连接 · 等待订阅"
+        PeripheralState.PERMISSION_REQUIRED -> "需要权限"
+        PeripheralState.UNSUPPORTED -> "不支持 BLE 外设"
+        PeripheralState.BLUETOOTH_OFF -> "蓝牙已关闭"
+        PeripheralState.ERROR -> "错误"
+    }
 }
 
 @Composable
@@ -314,7 +325,7 @@ private fun SessionRow(session: SessionCard) {
 }
 
 @Composable
-private fun DiscoveryCard(
+private fun AdvertisingCard(
     state: BuddyDashboardState,
     onEnterDemo: () -> Unit,
     onRescan: () -> Unit
@@ -327,104 +338,54 @@ private fun DiscoveryCard(
             .border(1.dp, BuddyColors.CardBorder, RoundedCornerShape(18.dp))
             .padding(14.dp)
     ) {
-        Text(
-            text = "等待 Mac",
-            color = BuddyColors.OnSurface,
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Bold
-        )
-        Text(
-            text = "搜索已停止",
-            color = BuddyColors.OnSurfaceDim,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Medium
-        )
+        Text(text = "等待 Mac 连接", color = BuddyColors.OnSurface, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+        Text(text = state.peripheralState.label, color = BuddyColors.OnSurfaceDim, fontSize = 12.sp, fontWeight = FontWeight.Medium)
         Spacer(modifier = Modifier.height(6.dp))
         HorizontalDivider(color = BuddyColors.Divider)
         Spacer(modifier = Modifier.height(10.dp))
         Text(
-            text = "保持手机与 Mac 在同一网络，CodeIsland 会持续同步当前状态。",
-            color = BuddyColors.OnSurfaceFaint,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Medium
+            text = "手机正在广播为 Buddy 设备。在 Mac 上打开 CodeIsland → 设置 → Buddy，Mac 会自动发现并连接。",
+            color = BuddyColors.OnSurfaceFaint, fontSize = 13.sp, fontWeight = FontWeight.Medium
         )
         Spacer(modifier = Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            BuddyButton(
-                text = "搜索 Mac",
-                icon = Icons.Default.Refresh,
-                tint = BuddyColors.AccentGreen,
-                onClick = onRescan,
-                modifier = Modifier.weight(1f)
-            )
-            BuddyButton(
-                text = "进入演示模式",
-                icon = Icons.Default.PlayArrow,
-                tint = BuddyColors.AccentBlue,
-                onClick = onEnterDemo,
-                modifier = Modifier.weight(1f)
-            )
+            BuddyButton("重启广播", Icons.Default.Refresh, BuddyColors.AccentGreen, onRescan, Modifier.weight(1f))
+            BuddyButton("进入演示模式", Icons.Default.PlayArrow, BuddyColors.AccentBlue, onEnterDemo, Modifier.weight(1f))
         }
     }
 }
 
 @Composable
-private fun ScanningCard(onEnterDemo: () -> Unit) {
+private fun StartingCard() {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(BuddyColors.Surface)
-            .border(1.dp, BuddyColors.CardBorder, RoundedCornerShape(18.dp))
-            .padding(14.dp)
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(BuddyColors.Surface)
+            .border(1.dp, BuddyColors.CardBorder, RoundedCornerShape(18.dp)).padding(14.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(18.dp),
-                color = BuddyColors.StatusActive,
-                strokeWidth = 2.dp
-            )
-            Spacer(modifier = Modifier.width(10.dp))
-            Text(
-                text = "正在搜索附近的 CodeIsland",
-                color = BuddyColors.OnSurface.copy(alpha = 0.72f),
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium
-            )
+            CircularProgressIndicator(Modifier.size(18.dp), color = BuddyColors.StatusActive, strokeWidth = 2.dp)
+            Spacer(Modifier.width(10.dp))
+            Text("正在启动 Buddy 广播...", color = BuddyColors.OnSurface.copy(alpha = 0.72f), fontSize = 14.sp, fontWeight = FontWeight.Medium)
         }
-        Spacer(modifier = Modifier.height(10.dp))
-        BuddyButton(
-            text = "进入演示模式",
-            icon = Icons.Default.PlayArrow,
-            tint = BuddyColors.AccentBlue,
-            onClick = onEnterDemo
-        )
     }
 }
 
 @Composable
-private fun ConnectingCard(state: BuddyDashboardState) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(BuddyColors.Surface)
-            .border(1.dp, BuddyColors.CardBorder, RoundedCornerShape(18.dp))
-            .padding(14.dp)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(18.dp),
-                color = BuddyColors.StatusActive,
-                strokeWidth = 2.dp
-            )
-            Spacer(modifier = Modifier.width(10.dp))
-            Text(
-                text = "正在连接 ${state.connectedDeviceName ?: "Mac"}...",
-                color = BuddyColors.OnSurface.copy(alpha = 0.72f),
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium
-            )
+private fun CommandButtons(
+    state: BuddyDashboardState, onApprove: () -> Unit, onDeny: () -> Unit, onSkip: () -> Unit, onFocus: () -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (!state.macSubscribed) {
+            Text("Mac 未订阅通知，操作不可用", color = BuddyColors.OnSurfaceDisabled, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (state.canApprove) {
+                BuddyButton("批准", Icons.Default.Search, BuddyColors.AccentGreen, onApprove, Modifier.weight(1f))
+                BuddyButton("拒绝", Icons.Default.Stop, BuddyColors.AccentRed, onDeny, Modifier.weight(1f))
+            }
+            if (state.canSkip) {
+                BuddyButton("跳过", Icons.Default.Refresh, BuddyColors.AccentOrange, onSkip, Modifier.weight(1f))
+                BuddyButton("打开 Mac", Icons.Default.PlayArrow, BuddyColors.AccentGreen, onFocus, Modifier.weight(1f))
+            }
         }
     }
 }

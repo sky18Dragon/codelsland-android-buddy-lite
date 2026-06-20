@@ -36,12 +36,14 @@ object BuddyFrameParser {
                     .coerceIn(BleProtocol.minBrightnessPercent, BleProtocol.maxBrightnessPercent)
             )
         }
+        if (marker == BleProtocol.brightnessFrameMarker) return null
 
         if (marker == BleProtocol.orientationFrameMarker && payload.size >= 2) {
             return IncomingCommand.Orientation(
                 wireValue = if (payload.unsignedByteAt(1) == 1) 1 else 0
             )
         }
+        if (marker == BleProtocol.orientationFrameMarker) return null
 
         if (marker == BleProtocol.workspaceFrameMarker && payload.size >= 2) {
             val declaredLength = payload.unsignedByteAt(1)
@@ -59,6 +61,7 @@ object BuddyFrameParser {
                 )
             )
         }
+        if (marker == BleProtocol.workspaceFrameMarker) return null
 
         if (marker == BleProtocol.messagePreviewFrameMarker && payload.size >= 4) {
             val flagLength = payload.unsignedByteAt(3)
@@ -80,6 +83,7 @@ object BuddyFrameParser {
                 )
             )
         }
+        if (marker == BleProtocol.messagePreviewFrameMarker) return null
 
         if (payload.size < AGENT_HEADER_BYTES) return null
 
