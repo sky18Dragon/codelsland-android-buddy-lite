@@ -14,12 +14,13 @@ class PermissionCoordinator(private val context: Context) {
     data class PermissionStatus(
         val bluetoothScan: Boolean = false,
         val bluetoothConnect: Boolean = false,
+        val bluetoothAdvertise: Boolean = false,
         val fineLocation: Boolean = false,
         val notifications: Boolean = false,
         val foregroundService: Boolean = true
     ) {
         val allGranted: Boolean
-            get() = bluetoothScan && bluetoothConnect && notifications &&
+            get() = bluetoothScan && bluetoothConnect && bluetoothAdvertise && notifications &&
                 (if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) fineLocation else true)
     }
 
@@ -30,6 +31,9 @@ class PermissionCoordinator(private val context: Context) {
             } else true,
             bluetoothConnect = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 hasPermission(Manifest.permission.BLUETOOTH_CONNECT)
+            } else true,
+            bluetoothAdvertise = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                hasPermission(Manifest.permission.BLUETOOTH_ADVERTISE)
             } else true,
             fineLocation = if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) {
                 hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)
@@ -48,6 +52,7 @@ class PermissionCoordinator(private val context: Context) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 add(Manifest.permission.BLUETOOTH_SCAN)
                 add(Manifest.permission.BLUETOOTH_CONNECT)
+                add(Manifest.permission.BLUETOOTH_ADVERTISE)
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 add(Manifest.permission.POST_NOTIFICATIONS)
@@ -103,6 +108,7 @@ class PermissionCoordinator(private val context: Context) {
     fun permissionLabel(permission: String): String = when (permission) {
         Manifest.permission.BLUETOOTH_SCAN -> "蓝牙扫描"
         Manifest.permission.BLUETOOTH_CONNECT -> "蓝牙连接"
+        Manifest.permission.BLUETOOTH_ADVERTISE -> "蓝牙广播"
         Manifest.permission.ACCESS_FINE_LOCATION -> "位置信息（蓝牙发现需要）"
         Manifest.permission.POST_NOTIFICATIONS -> "通知权限"
         else -> permission

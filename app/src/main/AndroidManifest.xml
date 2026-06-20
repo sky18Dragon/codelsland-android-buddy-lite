@@ -4,6 +4,7 @@
     <!-- BLE permissions (Android 12+) -->
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
 
     <!-- BLE permissions (Android 10-11) -->
     <uses-permission
@@ -49,8 +50,13 @@
         </activity>
 
         <service
-            android:name=".service.BuddySyncService"
+            android:name=".ble.BuddyPeripheralService"
             android:foregroundServiceType="connectedDevice"
+            android:exported="false"
+            android:stopWithTask="false" />
+
+        <service
+            android:name=".service.BuddySyncService"
             android:exported="false"
             android:stopWithTask="false" />
 

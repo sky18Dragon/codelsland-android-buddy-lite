@@ -12,8 +12,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Modifier
+import com.codeisland.buddylite.ble.BuddyPeripheralService
 import com.codeisland.buddylite.data.model.PermissionState
-import com.codeisland.buddylite.service.BuddySyncService
 import com.codeisland.buddylite.ui.PermissionCoordinator
 import com.codeisland.buddylite.ui.navigation.BuddyNavGraph
 import com.codeisland.buddylite.ui.theme.BuddyTheme
@@ -65,7 +65,6 @@ class MainActivity : ComponentActivity() {
                         onExitDemo = { repo.exitDemoMode() },
                         onCycleDemo = { repo.cycleDemoState() },
                         onRescan = {
-                            repo.unbindTransport()
                             startSyncService()
                         },
                         isHyperOS = permissionCoordinator.isHyperOS()
@@ -91,6 +90,7 @@ class MainActivity : ComponentActivity() {
         val bluetoothPerms = missing.filter {
             it == Manifest.permission.BLUETOOTH_SCAN ||
                 it == Manifest.permission.BLUETOOTH_CONNECT ||
+                it == Manifest.permission.BLUETOOTH_ADVERTISE ||
                 it == Manifest.permission.ACCESS_FINE_LOCATION
         }
         if (bluetoothPerms.isNotEmpty()) {
@@ -119,7 +119,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun startSyncService() {
-        val intent = Intent(this, BuddySyncService::class.java)
+        val intent = Intent(this, BuddyPeripheralService::class.java)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startForegroundService(intent)
         } else {

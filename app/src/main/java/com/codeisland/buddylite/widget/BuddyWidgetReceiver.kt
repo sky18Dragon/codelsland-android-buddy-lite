@@ -4,7 +4,6 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
-import com.codeisland.buddylite.service.BuddySyncService
 
 class BuddyWidgetReceiver : AppWidgetProvider() {
 
