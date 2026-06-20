@@ -167,7 +167,7 @@ class BuddyRepository(
         if (state.isDemoMode) return
 
         try {
-            val summary = json.decodeFromString<CompanionBluetoothSummary>(jsonBytes)
+            val summary = json.decodeFromString<CompanionBluetoothSummary>(jsonBytes.decodeToString())
             if (summary.sequence <= state.lastDeliveredSequence) return
 
             val newState = ProtocolMapper.mapToDomainState(summary, state)
@@ -199,7 +199,7 @@ class BuddyRepository(
     }
 
     private suspend fun staleCheckLoop() {
-        while (isActive) {
+        while (kotlinx.coroutines.currentCoroutineContext().isActive) {
             delay(5_000)
             val state = _dashboardState.value
             if (state.isDemoMode) continue

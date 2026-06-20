@@ -15,6 +15,8 @@ import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
+import androidx.glance.LocalContext
+import android.content.Intent
 import androidx.glance.background
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Column
@@ -28,6 +30,9 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import com.codeisland.buddylite.MainActivity
 
 class BuddyGlanceWidget : GlanceAppWidget() {
@@ -59,15 +64,16 @@ class BuddyGlanceWidget : GlanceAppWidget() {
     }
 }
 
-@androidx.glance.Composable
+@Composable
 private fun WidgetContent(state: com.codeisland.buddylite.data.model.BuddyDashboardState?) {
+    val context = LocalContext.current
     Column(
         modifier = GlanceModifier
             .fillMaxWidth()
-            .background(ColorProvider(0xFF0D0D12.toInt()))
+            .background(ColorProvider(Color(0xFF0D0D12)))
             .cornerRadius(18.dp)
             .padding(12.dp)
-            .clickable(actionStartActivity<MainActivity>())
+            .clickable(actionStartActivity(Intent(context, MainActivity::class.java)))
     ) {
         // Title
         Text(
@@ -91,7 +97,7 @@ private fun WidgetContent(state: com.codeisland.buddylite.data.model.BuddyDashbo
                 Text(
                     text = state.source.uppercase(),
                     style = TextStyle(
-                        color = ColorProvider(0xFFFFFFFF.toInt()),
+                        color = ColorProvider(Color(0xFFFFFFFF)),
                         fontWeight = FontWeight.Bold
                     )
                 )
@@ -99,7 +105,7 @@ private fun WidgetContent(state: com.codeisland.buddylite.data.model.BuddyDashbo
                 Text(
                     text = state.status.label,
                     style = TextStyle(
-                        color = ColorProvider(0x99FFFFFF)
+                        color = ColorProvider(Color(0x99FFFFFF))
                     )
                 )
             }
@@ -109,7 +115,7 @@ private fun WidgetContent(state: com.codeisland.buddylite.data.model.BuddyDashbo
                 Spacer(modifier = GlanceModifier.height(2.dp))
                 Text(
                     text = "workspace: $ws",
-                    style = TextStyle(color = ColorProvider(0x99FFFFFF)),
+                    style = TextStyle(color = ColorProvider(Color(0x99FFFFFF))),
                     maxLines = 1
                 )
             }
@@ -117,7 +123,7 @@ private fun WidgetContent(state: com.codeisland.buddylite.data.model.BuddyDashbo
                 Spacer(modifier = GlanceModifier.height(2.dp))
                 Text(
                     text = "tool: $tool",
-                    style = TextStyle(color = ColorProvider(0x99FFFFFF)),
+                    style = TextStyle(color = ColorProvider(Color(0x99FFFFFF))),
                     maxLines = 1
                 )
             }
@@ -129,7 +135,7 @@ private fun WidgetContent(state: com.codeisland.buddylite.data.model.BuddyDashbo
                 Spacer(modifier = GlanceModifier.height(4.dp))
                 Text(
                     text = "$sessionCount 个会话 · $activeCount 个活跃",
-                    style = TextStyle(color = ColorProvider(0x66FFFFFF))
+                    style = TextStyle(color = ColorProvider(Color(0x66FFFFFF)))
                 )
             }
 
@@ -140,22 +146,22 @@ private fun WidgetContent(state: com.codeisland.buddylite.data.model.BuddyDashbo
                 Spacer(modifier = GlanceModifier.height(2.dp))
                 Text(
                     text = "更新于 $time",
-                    style = TextStyle(color = ColorProvider(0x66FFFFFF))
+                    style = TextStyle(color = ColorProvider(Color(0x66FFFFFF)))
                 )
             }
         } else {
             Spacer(modifier = GlanceModifier.height(4.dp))
             Text(
                 text = "等待连接 Mac...",
-                style = TextStyle(color = ColorProvider(0x99FFFFFF))
+                style = TextStyle(color = ColorProvider(Color(0x99FFFFFF)))
             )
         }
     }
 }
 
 private fun statusColor(status: String): ColorProvider = when (status.lowercase()) {
-    "idle" -> ColorProvider(0xFF8C96A8.toInt())
-    "processing", "running" -> ColorProvider(0xFF4DD964.toInt())
-    "waitingapproval", "waitingquestion" -> ColorProvider(0xFFFF8C00.toInt())
-    else -> ColorProvider(0xFF8C96A8.toInt())
+    "idle" -> ColorProvider(Color(0xFF8C96A8))
+    "processing", "running" -> ColorProvider(Color(0xFF4DD964))
+    "waitingapproval", "waitingquestion" -> ColorProvider(Color(0xFFFF8C00))
+    else -> ColorProvider(Color(0xFF8C96A8))
 }

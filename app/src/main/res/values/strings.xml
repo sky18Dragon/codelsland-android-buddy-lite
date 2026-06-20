@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">CodeIsland Buddy</string>
+    <string name="buddy_widget_description">CodeIsland agent status at a glance</string>
+</resources>

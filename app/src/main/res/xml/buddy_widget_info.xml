@@ -4,5 +4,5 @@
     android:minHeight="40dp"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
-    android:description="CodeIsland agent status at a glance"
+    android:description="@string/buddy_widget_description"
     android:initialLayout="@layout/buddy_widget_layout" />
